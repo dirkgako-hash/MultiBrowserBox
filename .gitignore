@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# Keystores
+*.jks
+*.keystore
+
+# Build outputs
+app/build/
+*.apk
+*.aar
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Profiles
+app/src/main/assets/profiles/
