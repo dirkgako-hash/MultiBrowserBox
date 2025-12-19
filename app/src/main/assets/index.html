@@ -6,9 +6,8 @@
     <meta name="theme-color" content="#1e3c72">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Football Stream</title>
+    <title>Multi Stream Player</title>
     <link rel="manifest" href="data:application/manifest+json,{}">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { 
@@ -17,14 +16,13 @@
             color:#fff; 
             padding:0;
             transition: all 0.3s ease;
-            -webkit-tap-highlight-color: transparent;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
         }
         
-        /* Players Container - Otimizado */
+        /* Players Container */
         .players-container { 
             flex: 1;
             display:grid; 
@@ -33,78 +31,20 @@
             min-height: 0;
             width: 100%;
             height: 100%;
-            touch-action: pan-x pan-y;
-            will-change: transform;
-            /* Grid padrão inicial - será ajustado dinamicamente */
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: repeat(2, 1fr);
         }
         
-        /* Layout Variations - Agora apenas como classes de referência */
-        .layout-2x2 { 
-            grid-template-columns: repeat(2, 1fr); 
-            grid-template-rows: repeat(2, 1fr); 
-        }
-        .layout-1x4 { 
-            grid-template-columns: repeat(4, 1fr); 
-            grid-template-rows: 1fr; 
-        }
-        .layout-4x1 { 
-            grid-template-columns: 1fr; 
-            grid-template-rows: repeat(4, 1fr); 
-        }
-        .layout-1x2 { 
-            grid-template-columns: repeat(2, 1fr); 
-            grid-template-rows: 1fr; 
-        }
-        .layout-2x1 { 
-            grid-template-columns: 1fr; 
-            grid-template-rows: repeat(2, 1fr); 
-        }
-        .layout-1x3 { 
-            grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: 1fr; 
-        }
-        .layout-3x1 { 
-            grid-template-columns: 1fr; 
-            grid-template-rows: repeat(3, 1fr); 
-        }
-        .layout-1x1 { 
-            grid-template-columns: 1fr; 
-            grid-template-rows: 1fr; 
-        }
+        .layout-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .layout-1x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr; }
+        .layout-4x1 { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+        .layout-1x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
+        .layout-2x1 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
+        .layout-1x3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+        .layout-3x1 { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
+        .layout-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         
-        /* Responsive Layouts - Mantidos para compatibilidade */
-        .orientation-portrait .players-container.layout-2x2,
-        .orientation-portrait .players-container.layout-1x2,
-        .orientation-portrait .players-container.layout-2x1 {
-            grid-template-columns: 1fr;
-            grid-template-rows: repeat(2, 1fr);
-        }
-        
-        .orientation-portrait .players-container.layout-1x3,
-        .orientation-portrait .players-container.layout-3x1 {
-            grid-template-columns: 1fr;
-            grid-template-rows: repeat(3, 1fr);
-        }
-        
-        .orientation-landscape .players-container.layout-2x2 {
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-        }
-        
-        @media (max-width: 768px) {
-            .layout-1x4 { 
-                grid-template-columns: 1fr; 
-                grid-template-rows: repeat(4, 1fr); 
-            }
-            .layout-1x3 { 
-                grid-template-columns: 1fr; 
-                grid-template-rows: repeat(3, 1fr); 
-            }
-        }
-        
-        /* Player Slot compacto */
+        /* Player Slot */
         .player-slot { 
             background:#1a1a1a; 
             border-radius:2px; 
@@ -113,387 +53,8 @@
             position:relative;
             display: flex;
             flex-direction: column;
-            cursor: pointer;
-            will-change: transform, opacity;
-            transform: translateZ(0);
-            backface-visibility: hidden;
             min-height: 0;
             min-width: 0;
-        }
-        
-        /* Garantir que o player-slot seja visível quando não estiver escondido */
-        .player-slot:not([style*="display: none"]) {
-            display: flex !important;
-        }
-        
-        /* Controles do player - simplificados */
-        .player-controls-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0,0,0,0.7);
-            padding: 2px 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 5;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            font-size: 10px;
-        }
-        .player-slot:hover .player-controls-overlay {
-            opacity: 1;
-        }
-        .player-title { 
-            font-weight:bold; 
-            font-size:10px; 
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .stream-counter {
-            background: #1e3c72;
-            color: white;
-            padding: 1px 3px;
-            border-radius: 6px;
-            font-size: 8px;
-            font-weight: normal;
-        }
-        .player-buttons { 
-            display:flex; 
-            gap:1px; 
-            align-items: center; 
-            flex-wrap: nowrap;
-        }
-        .player-buttons button { 
-            background:#444; 
-            border:none; 
-            color:white; 
-            padding:1px 3px; 
-            border-radius:2px; 
-            cursor:pointer; 
-            font-size:7px; 
-            white-space: nowrap;
-        }
-        
-        /* Video Players */
-        .stream-player { 
-            flex: 1;
-            min-height: 0;
-            background:#000; 
-            border:none; 
-            display:block; 
-            will-change: transform;
-            transform: translateZ(0);
-            width: 100%;
-            height: 100%;
-        }
-        .video-player {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: #000;
-            display: none;
-        }
-        
-        /* CONTROLES BOX FLUTUANTE - Compactado */
-        .controls-box {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(26, 26, 26, 0.95);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 8px;
-            z-index: 100;
-            min-width: 250px;
-            max-width: calc(100vw - 20px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        
-        .controls-box.minimized {
-            bottom: 10px;
-            padding: 6px 10px;
-            min-width: auto;
-            width: auto;
-            background: rgba(26, 26, 26, 0.85);
-        }
-        
-        .controls-box.minimized .controls-content {
-            display: none;
-        }
-        
-        .controls-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            cursor: pointer;
-            padding: 2px;
-            border-radius: 4px;
-        }
-        
-        .controls-box.minimized .controls-header {
-            margin-bottom: 0;
-        }
-        
-        .controls-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-        
-        .minimize-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 4px;
-            width: 24px;
-            height: 24px;
-        }
-        
-        .controls-content {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        
-        .controls-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .control-group {
-            display: flex;
-            gap: 3px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .controls-box select, 
-        .controls-box button { 
-            padding: 6px 8px;
-            background:#333; 
-            color:white; 
-            border:none; 
-            border-radius:4px; 
-            font-size:11px; 
-            cursor: pointer;
-            white-space: nowrap;
-            height: 30px;
-            min-width: 40px;
-        }
-        
-        .controls-box button { 
-            background:#1e3c72; 
-            font-weight:bold; 
-        }
-        
-        /* Box selection in controls box */
-        .box-selection-group {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-left: 10px;
-            padding-left: 10px;
-            border-left: 1px solid #444;
-        }
-        
-        .box-checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 10px;
-            color: #ccc;
-            cursor: pointer;
-        }
-        
-        .box-checkbox-label input[type="checkbox"] {
-            width: 12px;
-            height: 12px;
-            cursor: pointer;
-        }
-        
-        /* Mobile styles */
-        @media (max-width: 768px) {
-            .controls-box {
-                padding: 6px;
-            }
-            
-            .controls-box select, 
-            .controls-box button {
-                font-size: 12px;
-                height: 32px;
-                min-width: 44px;
-            }
-            
-            .box-selection-group {
-                flex-wrap: wrap;
-                gap: 3px;
-                margin-left: 5px;
-                padding-left: 5px;
-            }
-        }
-        
-        /* Sidebar principal - agora visível em todos os modos */
-        .main-sidebar {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            width: 300px;
-            height: 100vh;
-            background: rgba(0,0,0,0.97);
-            z-index: 10003;
-            transition: left 0.3s ease;
-            padding: 15px;
-            overflow-y: auto;
-            border-right: 1px solid #333;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.5);
-        }
-        .main-sidebar.active {
-            left: 0;
-        }
-        
-        .sidebar-toggle {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 10002;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .sidebar-section {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
-        
-        .sidebar-section h3 {
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #1e3c72;
-        }
-        
-        .sidebar-section select, 
-        .sidebar-section input, 
-        .sidebar-section button {
-            width: 100%;
-            padding: 6px 8px;
-            margin-bottom: 6px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        
-        .sidebar-section button {
-            background: #1e3c72;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .url-input-group {
-            display: flex;
-            gap: 4px;
-        }
-        
-        .url-input-group input {
-            flex: 1;
-            margin-bottom: 0;
-        }
-        
-        .url-input-group button {
-            width: auto;
-            min-width: 60px;
-        }
-        
-        /* Quality selector */
-        .quality-selector {
-            display: none;
-            margin-top: 5px;
-        }
-        
-        .quality-selector.active {
-            display: block;
-        }
-        
-        .quality-selector select {
-            width: 100%;
-            padding: 4px;
-            font-size: 11px;
-        }
-        
-        /* Overlay para fechar sidebar */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 10002;
-            display: none;
-        }
-        .sidebar-overlay.active {
-            display: block;
-        }
-        
-        /* Status message */
-        .status-message {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            z-index: 1000;
-            display: none;
-        }
-        .status-message.show {
-            display: block;
-        }
-        
-        /* Stream states */
-        .stream-error {
-            background: #ff4444 !important;
-        }
-        
-        .stream-loading {
-            background: #1e3c72 !important;
-        }
-        
-        /* History and Favorites - URLs curtas */
-        .short-url {
-            max-width: 180px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 11px;
-            color: #aaa;
-        }
-        
-        /* Fullscreen styles - REMOVIDO: controls-box não deve ser escondido */
-        body.fullscreen-app .sidebar-toggle {
-            display: none;
         }
         
         .player-slot.fullscreen {
@@ -505,1926 +66,824 @@
             z-index: 10000;
             border-radius: 0;
             border: none;
+            background: #000;
         }
         
-        /* Fullscreen controls */
-        .fullscreen-controls {
+        /* Controls Overlay */
+        .player-controls-overlay {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 10002;
-            display: flex;
-            gap: 4px;
-            background: rgba(0,0,0,0.8);
-            border-radius: 6px;
-            padding: 4px;
-        }
-        
-        .fullscreen-controls button {
-            background: rgba(0,0,0,0.7);
-            color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 4px 6px;
-            font-size: 10px;
-            cursor: pointer;
-        }
-        
-        /* Popup de Options */
-        .options-popup {
-            position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 10004;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .options-popup.active {
+            background: rgba(0,0,0,0.8);
+            padding: 8px;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 12px;
         }
         
-        .options-content {
-            background: #1a1a1a;
+        .player-slot:hover .player-controls-overlay {
+            opacity: 1;
+        }
+        
+        .player-title { 
+            font-weight:bold; 
+            font-size:12px; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .player-buttons { 
+            display:flex; 
+            gap:4px; 
+            align-items: center; 
+            flex-wrap: nowrap;
+        }
+        
+        .player-buttons button { 
+            background:#444; 
+            border:none; 
+            color:white; 
+            padding:6px 10px; 
+            border-radius:4px; 
+            cursor:pointer; 
+            font-size:11px; 
+            white-space: nowrap;
+            min-width: 40px;
+        }
+        
+        .player-buttons button:hover { 
+            background:#555; 
+        }
+        
+        .speed-control {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .speed-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #333;
+            border-radius: 4px;
+            padding: 5px;
+            z-index: 100;
+            min-width: 80px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        
+        .speed-dropdown.show {
+            display: block;
+        }
+        
+        .speed-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .speed-option:hover {
+            background: #444;
+        }
+        
+        .speed-option.active {
+            background: #1e3c72;
+            color: white;
+        }
+        
+        /* Video Container */
+        .video-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            background: #000;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .video-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+        }
+        
+        /* Main Controls */
+        .main-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.95);
             border: 1px solid #333;
             border-radius: 8px;
-            padding: 15px;
-            width: 90%;
-            max-width: 400px;
-            max-height: 90vh;
-            overflow-y: auto;
+            padding: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
         }
         
-        /* Melhorias para grids dinâmicas */
-        .grid-auto-fit {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .main-controls select,
+        .main-controls button {
+            padding: 8px 12px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            min-width: 60px;
         }
         
-        .grid-auto-fill {
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        .main-controls button {
+            background: #1e3c72;
+            font-weight: bold;
         }
         
-        /* Ajuste para quando há menos boxes */
-        .players-container:has(.player-slot:nth-child(1):last-child) {
-            grid-template-columns: 1fr !important;
-            grid-template-rows: 1fr !important;
+        .main-controls button:hover {
+            background: #2a4a8c;
         }
         
-        .players-container:has(.player-slot:nth-child(2):last-child) {
-            grid-template-columns: repeat(2, 1fr) !important;
-            grid-template-rows: 1fr !important;
+        /* URL Input */
+        .url-input-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            min-width: 300px;
         }
         
-        .players-container:has(.player-slot:nth-child(3):last-child) {
-            grid-template-columns: repeat(2, 1fr) !important;
-            grid-template-rows: repeat(2, 1fr) !important;
+        .url-input-container input {
+            flex: 1;
+            padding: 8px 12px;
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 12px;
         }
         
-        .players-container:has(.player-slot:nth-child(3):last-child) .player-slot:nth-child(3) {
-            grid-column: span 2;
+        .url-input-container button {
+            padding: 8px 16px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
         }
         
-        /* Classes utilitárias para divisão igual */
-        .equal-columns-1 { grid-template-columns: 1fr; }
-        .equal-columns-2 { grid-template-columns: repeat(2, 1fr); }
-        .equal-columns-3 { grid-template-columns: repeat(3, 1fr); }
-        .equal-columns-4 { grid-template-columns: repeat(4, 1fr); }
+        /* Status Message */
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
         
-        .equal-rows-1 { grid-template-rows: 1fr; }
-        .equal-rows-2 { grid-template-rows: repeat(2, 1fr); }
-        .equal-rows-3 { grid-template-rows: repeat(3, 1fr); }
-        .equal-rows-4 { grid-template-rows: repeat(4, 1fr); }
+        .status-message.show {
+            display: block;
+        }
+        
+        /* Fullscreen controls */
+        .fullscreen-exit-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            z-index: 10001;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .player-slot.fullscreen .fullscreen-exit-btn {
+            display: block;
+        }
+        
+        /* Loading indicator */
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .loading {
+            display: block;
+        }
+        
+        /* Box selection */
+        .box-selector {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .box-checkbox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .box-checkbox label {
+            font-size: 11px;
+            color: #ccc;
+        }
+        
+        @media (max-width: 768px) {
+            .players-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .main-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                bottom: 10px;
+                padding: 8px;
+            }
+            
+            .url-input-container {
+                top: 10px;
+                min-width: 90vw;
+            }
+        }
     </style>
 </head>
-<body class="orientation-landscape">
-    <!-- Botão para toggle sidebar -->
-   
-    <!-- Grid de players -->
-    <div class="players-container layout-2x2" id="players-container">
-        <!-- Player slots serão populados aqui -->
+<body>
+    <!-- Box selector -->
+    <div class="box-selector">
+        <div class="box-checkbox">
+            <input type="checkbox" id="box1" checked>
+            <label for="box1">Box 1</label>
+        </div>
+        <div class="box-checkbox">
+            <input type="checkbox" id="box2" checked>
+            <label for="box2">Box 2</label>
+        </div>
+        <div class="box-checkbox">
+            <input type="checkbox" id="box3" checked>
+            <label for="box3">Box 3</label>
+        </div>
+        <div class="box-checkbox">
+            <input type="checkbox" id="box4" checked>
+            <label for="box4">Box 4</label>
+        </div>
     </div>
+
+    <!-- URL input -->
+    <div class="url-input-container">
+        <select id="player-select">
+            <option value="0">Player 1</option>
+            <option value="1">Player 2</option>
+            <option value="2">Player 3</option>
+            <option value="3">Player 4</option>
+        </select>
+        <input type="text" id="url-input" placeholder="Enter stream URL">
+        <button onclick="loadURL()">Load</button>
+    </div>
+
+    <!-- Players container -->
+    <div class="players-container layout-2x2" id="players-container">
+        <!-- Player slots will be generated here -->
+    </div>
+
+    <!-- Main controls -->
+    <div class="main-controls">
+        <select id="layout-select" onchange="changeLayout(this.value)">
+            <option value="layout-2x2">2x2</option>
+            <option value="layout-1x4">1x4</option>
+            <option value="layout-4x1">4x1</option>
+            <option value="layout-1x2">1x2</option>
+            <option value="layout-2x1">2x1</option>
+            <option value="layout-1x3">1x3</option>
+            <option value="layout-3x1">3x1</option>
+            <option value="layout-1x1">1x1</option>
+        </select>
+        
+        <button onclick="playAll()">▶ Play All</button>
+        <button onclick="reloadAll()">↻ Reload All</button>
+        <button onclick="clearAll()">✕ Clear All</button>
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    </div>
+
+    <!-- Fullscreen exit button -->
+    <button class="fullscreen-exit-btn" onclick="exitFullscreen()">Exit Fullscreen</button>
 
     <!-- Status message -->
     <div class="status-message" id="status-message"></div>
 
-    <!-- Sidebar principal -->
-    <div class="main-sidebar" id="main-sidebar">
-        <div class="sidebar-section">
-            <h3>Player Selection</h3>
-            <select class="player-selector" id="sidebar-player-select" onchange="updateSidebarForPlayer()">
-                <option value="0">Player 1</option>
-                <option value="1">Player 2</option>
-                <option value="2">Player 3</option>
-                <option value="3">Player 4</option>
-            </select>
-            
-            <div class="quality-selector" id="quality-selector">
-                <h4>Quality</h4>
-                <select id="quality-select" onchange="changeQuality(this.value)">
-                    <option value="auto">Auto</option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="sidebar-section">
-            <h3>Football Matches</h3>
-            <div id="matches-loading" style="display: none; text-align: center;">
-                <div class="spinner" style="width: 20px; height: 20px; margin: 5px auto;"></div>
-                <p style="font-size: 12px;">Loading matches...</p>
-            </div>
-            <select class="match-selector" id="sidebar-match-select">
-                <option value="">Select Match</option>
-            </select>
-            <button onclick="loadSelectedMatch()">Load Match</button>
-            <button onclick="loadFootballMatches()" style="margin-top: 5px; background: #4CAF50;">🔄 Refresh Matches</button>
-        </div>
-        
-        <div class="sidebar-section">
-            <h3>Stream Selection</h3>
-            <select class="stream-selector" id="sidebar-stream-select">
-                <option value="">Select Stream</option>
-            </select>
-            <button onclick="loadSelectedStream()">Load Stream</button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button onclick="cycleStream(currentPlayer, -1)">◀ Prev</button>
-                <button onclick="cycleStream(currentPlayer, 1)">Next ▶</button>
-            </div>
-        </div>
-        
-        <div class="sidebar-section">
-            <h3>Custom URL</h3>
-            <div class="url-input-group">
-                <input type="text" id="sidebar-url-input" placeholder="Enter stream URL">
-                <button onclick="loadSidebarURL()">Load</button>
-            </div>
-            
-            <div style="margin-top: 10px;">
-                <h4>History</h4>
-                <select id="sidebar-history-select" style="font-size: 11px;">
-                    <option value="">Recent URLs</option>
-                </select>
-                <button onclick="loadFromSidebarHistory()" style="margin-top: 5px; font-size: 11px; padding: 4px 8px;">Load History</button>
-                
-                <h4 style="margin-top: 10px;">Favorites</h4>
-                <select id="sidebar-favorites-select" style="font-size: 11px;">
-                    <option value="">Favorites</option>
-                </select>
-                <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <button onclick="loadFromSidebarFavorites()" style="font-size: 11px; padding: 4px 8px; flex: 1;">Load Favorite</button>
-                    <button onclick="toggleCurrentFavoriteSidebar()" id="sidebar-favorite-btn" style="font-size: 11px; padding: 4px 8px; background: #ffc107; color: #000;">☆</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="sidebar-section">
-            <h3>Layout & Options</h3>
-            <select class="layout-selector" id="sidebar-layout-select" onchange="changeLayout(this.value)">
-                <option value="layout-2x2">2x2 Grid</option>
-                <option value="layout-1x4">1x4 Horizontal</option>
-                <option value="layout-4x1">4x1 Vertical</option>
-                <option value="layout-1x2">1x2 Horizontal</option>
-                <option value="layout-2x1">2x1 Vertical</option>
-                <option value="layout-1x3">1x3 Horizontal</option>
-                <option value="layout-3x1">3x1 Vertical</option>
-                <option value="layout-1x1">1x1 Single</option>
-            </select>
-            
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button onclick="playAllStreams()" style="flex: 1;">▶ Play All</button>
-                <button onclick="forceReloadAllStreams()" style="flex: 1;">🔄 Reload All</button>
-                <button onclick="clearAllPlayers()" style="flex: 1; background: #f44336;">🗑 Clear All</button>
-            </div>
-            <button id="fullscreen-app" title="Fullscreen"> ⛶</button>
-            
-            <button onclick="openOptionsPopup()" style="margin-top: 10px; width: 100%;">⚙️ Advanced Options</button>
-            
-            <button onclick="toggleMainSidebar()" style="margin-top: 5px; width: 100%; background: #666;">✕ Close Sidebar</button>
-        </div>
-    </div>
-
-    <!-- Overlay para fechar sidebar -->
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMainSidebar()"></div>
-
-    <!-- Popup de Options -->
-    <div class="options-popup" id="options-popup">
-        <div class="options-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="color: #1e3c72;">Advanced Options</h3>
-                <button onclick="closeOptionsPopup()" style="background: #444; padding: 5px 10px;">✕</button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="option-referrer" checked>
-                    <span>Hide Referrer</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="option-useragent" checked>
-                    <span>Mask User Agent</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="option-allowscripts" checked>
-                    <span>Allow Scripts</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="option-allowforms" checked>
-                    <span>Allow Forms</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="option-allowpopups" checked>
-                    <span>Allow Popups</span>
-                </label>
-            </div>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button onclick="exportConfig()" style="flex: 1;">📤 Export Config</button>
-                <button onclick="importConfig()" style="flex: 1;">📥 Import Config</button>
-                <input type="file" id="config-file" accept=".json" style="display:none">
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button onclick="applyOptionsAndClose()" style="flex: 1; background: #4CAF50;">Apply</button>
-                <button onclick="closeOptionsPopup()" style="flex: 1; background: #f44336;">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CONTROLES BOX FLUTUANTE - SEMPRE VISÍVEL -->
-    <div class="controls-box minimized" id="controls-box">
-        <div class="controls-header" onclick="toggleControls()">
-            <button class="minimize-btn" id="minimize-btn">+</button>
-            <div class="controls-title"></div>
-            <!-- Box Selection à direita do botão minimizar -->
-            <div class="box-selection-group">
-                <label class="box-checkbox-label">
-                    <input type="checkbox" value="0" checked> P1
-                </label>
-                <label class="box-checkbox-label">
-                    <input type="checkbox" value="1" checked> P2
-                </label>
-                <label class="box-checkbox-label">
-                    <input type="checkbox" value="2" checked> P3
-                </label>
-                <label class="box-checkbox-label">
-                    <input type="checkbox" value="3" checked> P4
-                </label>
-            </div>
-        </div>
-        
-        <div class="controls-content" id="controls-content">
-            <div class="controls-row">
-                <div class="control-group">
-                    <select id="layout-select" onchange="changeLayout(this.value)" style="min-width: 70px;">
-                        <!-- Options serão preenchidas dinamicamente -->
-                    </select>
-                    <button onclick="toggleMainSidebar()" title="Menu">☰ SideBar</button>
-                    <button onclick="loadFootballMatches()" title="Refresh">🔄</button>
-                    <button onclick="openOptionsPopup()" title="Options">⚙️</button>
-                </div>
-            </div>
-            
-            <div class="controls-row">
-                <div class="control-group">
-                    <button class="orientation-toggle" onclick="toggleOrientation()" id="orientation-btn">📱 Landscape</button>
-                </div>
-                
-                <div class="control-group">
-                    <button onclick="playAllStreams()" title="Play All">▶️</button>
-                    <button onclick="forceReloadAllStreams()" title="Reload">🔄</button>
-                    <button onclick="clearAllPlayers()" title="Clear">🗑️</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-    // Global state
-    const state = {
-        matches: [],
-        players: Array(4).fill().map((_, i) => ({
-            id: i,
-            currentMatch: null,
-            currentStream: null,
-            availableStreams: [],
-            currentStreamIndex: 0,
-            iframe: null,
-            overlay: null,
-            streamCounterElement: null,
-            isFullscreen: false,
-            currentUrl: null,
-            settingsVisible: false,
-            settingsTimeout: null,
-            historySelect: null,
-            favoritesSelect: null,
-            favoriteBtn: null,
-            isLoading: false,
-            hasError: false,
-            videoElement: null,
-            hls: null,
-            qualityLevels: [],
-            currentQuality: 'auto'
-        })),
-        isAppFullscreen: false,
-        deferredPrompt: null,
-        advancedOptions: {
-            hideReferrer: true,
-            maskUserAgent: true,
-            allowScripts: true,
-            allowForms: true,
-            allowPopups: true
-        },
-        currentLayout: 'layout-2x2',
-        fullscreenPlayer: null,
-        sidebarVisible: false,
-        orientation: 'landscape',
-        controlsMinimized: true,
-        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-        // Histórico e Favoritos
-        history: [],
-        favorites: [],
-        currentPlayer: 0,
-        qualityTesting: {},
-        // Seleção de boxes
-        selectedBoxes: [0, 1, 2, 3],
-        // Layouts disponíveis por número de boxes
-        layoutByBoxCount: {
-            1: ['layout-1x1'],
-            2: ['layout-1x2', 'layout-2x1'],
-            3: ['layout-1x3', 'layout-3x1'],
-            4: ['layout-2x2', 'layout-1x4', 'layout-4x1']
-        },
-        // Mapeamento de layouts para configurações de grid
-        layoutGridConfig: {
-            'layout-1x1': { cols: 1, rows: 1 },
-            'layout-1x2': { cols: 2, rows: 1 },
-            'layout-2x1': { cols: 1, rows: 2 },
-            'layout-1x3': { cols: 3, rows: 1 },
-            'layout-3x1': { cols: 1, rows: 3 },
-            'layout-2x2': { cols: 2, rows: 2 },
-            'layout-1x4': { cols: 4, rows: 1 },
-            'layout-4x1': { cols: 1, rows: 4 }
-        }
-    };
+        // Global state
+        const state = {
+            players: Array(4).fill().map((_, i) => ({
+                id: i,
+                iframe: null,
+                currentUrl: null,
+                history: [],
+                historyIndex: -1,
+                isFullscreen: false,
+                playbackRate: 1.0,
+                loading: false
+            })),
+            currentLayout: 'layout-2x2',
+            fullscreenPlayer: null
+        };
 
-    // Initialize application
-    document.addEventListener('DOMContentLoaded', function() {
-        initializePlayers();
-        setupPWA();
-        setupFullscreen();
-        setupOptionsPopup();
-        detectOrientation();
-        loadFootballMatches();
-        loadHistoryAndFavorites();
-        
-        // Setup event listeners
-        window.addEventListener('resize', detectOrientation);
-        window.addEventListener('resize', adjustLayoutForBoxes);
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        
-        // CONFIGURAR BOTÕES
-        setupAllButtonEvents();
-        setupFullscreenControls();
-        
-        // Setup box selection checkboxes
-        setupBoxSelection();
-        
-        // Auto-hide controls on mobile
-        if (state.isMobile) {
-            setupMobileControls();
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePlayers();
+            setupEventListeners();
+            updateBoxVisibility();
+            
+            // Set initial URLs for testing (optional)
+            // state.players[0].currentUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+            // state.players[1].currentUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+            // loadInitialURLs();
+        });
+
+        function initializePlayers() {
+            const container = document.getElementById('players-container');
+            container.innerHTML = '';
+            
+            state.players.forEach((player, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'player-slot';
+                slot.dataset.playerId = index;
+                slot.innerHTML = `
+                    <div class="player-controls-overlay">
+                        <div class="player-title">
+                            Player ${index + 1}
+                            <span id="status-${index}" style="font-size:10px;color:#aaa;"></span>
+                        </div>
+                        <div class="player-buttons">
+                            <button onclick="navigateBack(${index})" title="Back">◀</button>
+                            <button onclick="reloadPlayer(${index})" title="Reload">↻</button>
+                            <button onclick="navigateForward(${index})" title="Forward">▶</button>
+                            <div class="speed-control">
+                                <button onclick="toggleSpeedMenu(${index})" title="Speed">${player.playbackRate}x</button>
+                                <div class="speed-dropdown" id="speed-menu-${index}">
+                                    <div class="speed-option ${player.playbackRate === 0.5 ? 'active' : ''}" onclick="setSpeed(${index}, 0.5)">0.5x</div>
+                                    <div class="speed-option ${player.playbackRate === 0.75 ? 'active' : ''}" onclick="setSpeed(${index}, 0.75)">0.75x</div>
+                                    <div class="speed-option ${player.playbackRate === 1.0 ? 'active' : ''}" onclick="setSpeed(${index}, 1.0)">1.0x</div>
+                                    <div class="speed-option ${player.playbackRate === 1.25 ? 'active' : ''}" onclick="setSpeed(${index}, 1.25)">1.25x</div>
+                                    <div class="speed-option ${player.playbackRate === 1.5 ? 'active' : ''}" onclick="setSpeed(${index}, 1.5)">1.5x</div>
+                                    <div class="speed-option ${player.playbackRate === 2.0 ? 'active' : ''}" onclick="setSpeed(${index}, 2.0)">2.0x</div>
+                                </div>
+                            </div>
+                            <button onclick="togglePlayerFullscreen(${index})" title="Fullscreen">⛶</button>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <div class="loading-indicator" id="loading-${index}">Loading...</div>
+                        <iframe 
+                            class="video-frame" 
+                            id="iframe-${index}"
+                            frameborder="0" 
+                            allow="autoplay; encrypted-media; fullscreen"
+                            allowfullscreen
+                            referrerpolicy="no-referrer"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                            src="about:blank"
+                        ></iframe>
+                    </div>
+                `;
+                container.appendChild(slot);
+                
+                player.iframe = document.getElementById(`iframe-${index}`);
+                
+                // Setup iframe event listeners
+                setupIframeEvents(index);
+            });
         }
-        
-        // Atualizar sidebar para player 0 inicial
-        updateSidebarForPlayer();
-        
-        // Aplicar seleção inicial de boxes
-        applyBoxSelection();
-        
-        // Ajustar layout inicial
-        setTimeout(adjustLayoutForBoxes, 100);
-    });
-    
-    // Initialize players
-    function initializePlayers() {
-        const container = document.getElementById('players-container');
-        container.innerHTML = '';
-        
-        state.players.forEach((player, index) => {
-            const slot = document.createElement('div');
-            slot.className = 'player-slot';
-            slot.dataset.playerIndex = index;
-            slot.innerHTML = `
-                <div class="player-controls-overlay">
-                    <div class="player-title">
-                        Player ${index + 1}
-                        <div class="stream-counter" id="stream-counter-${index}"></div>
-                    </div>
-                    <div class="player-buttons">
-                        <button onclick="cycleStream(${index}, -1); event.stopPropagation();"> ◀</button>
-                        <button onclick="cycleStream(${index}, 1); event.stopPropagation();">▶ </button>
+
+        function setupIframeEvents(playerIndex) {
+            const iframe = state.players[playerIndex].iframe;
+            if (!iframe) return;
+            
+            iframe.onload = function() {
+                state.players[playerIndex].loading = false;
+                document.getElementById(`loading-${playerIndex}`).classList.remove('loading');
+                updateStatus(`Player ${playerIndex + 1} loaded`, 'success');
+                
+                // Inject script to control fullscreen behavior
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const script = iframeDoc.createElement('script');
+                    script.textContent = `
+                        // Override fullscreen behavior
+                        document.addEventListener('fullscreenchange', function(e) {
+                            if (document.fullscreenElement) {
+                                // Notify parent window
+                                window.parent.postMessage({type: 'fullscreenRequest', playerId: ${playerIndex}}, '*');
+                            }
+                        });
                         
-                        <button onclick="toggleMainSidebar()" title="Menu">☰ SideBar</button>                  
-                        <button onclick="toggleAppFullscreen()" title="Menu">Fullscreen</button>
-                    </div>
-                </div>
-                <div class="player-overlay" id="overlay-${index}" style="display: none;">
-                    <div class="overlay-content">
-                        <p>Loading stream...</p>
-                    </div>
-                </div>
-                <iframe 
-                    class="stream-player" 
-                    id="iframe-${index}"
-                    frameborder="0" 
-                    allow="autoplay; encrypted-media"
-                    src="about:blank"
-                    referrerpolicy="no-referrer"
-                ></iframe>
-                <video class="video-player" id="video-${index}"></video>
-            `;
-            container.appendChild(slot);
+                        // Override requestFullscreen
+                        Element.prototype._requestFullscreen = Element.prototype.requestFullscreen;
+                        Element.prototype.requestFullscreen = function() {
+                            window.parent.postMessage({type: 'fullscreenRequest', playerId: ${playerIndex}}, '*');
+                            return Promise.resolve();
+                        };
+                    `;
+                    iframeDoc.head.appendChild(script);
+                } catch (e) {
+                    // Cross-origin iframe, can't inject script
+                }
+            };
             
-            player.iframe = document.getElementById(`iframe-${index}`);
-            player.videoElement = document.getElementById(`video-${index}`);
-            player.overlay = document.getElementById(`overlay-${index}`);
-            player.streamCounterElement = document.getElementById(`stream-counter-${index}`);
+            iframe.onerror = function() {
+                state.players[playerIndex].loading = false;
+                document.getElementById(`loading-${playerIndex}`).classList.remove('loading');
+                updateStatus(`Player ${playerIndex + 1} failed to load`, 'error');
+            };
+        }
+
+        function setupEventListeners() {
+            // Box selection checkboxes
+            document.querySelectorAll('.box-checkbox input').forEach((checkbox, index) => {
+                checkbox.addEventListener('change', updateBoxVisibility);
+            });
             
-            // Setup event listeners
-            slot.addEventListener('click', (e) => {
-                if (!e.target.closest('.player-buttons')) {
-                    // Remover active de todos
-                    document.querySelectorAll('.player-slot').forEach(s => {
-                        s.classList.remove('active');
-                    });
-                    
-                    // Adicionar active ao clicado
-                    slot.classList.add('active');
-                    
-                    // Atualizar estado
-                    state.currentPlayer = index;
-                    updateSidebarForPlayer();
-                    
-                    // Atualizar dropdown da sidebar
-                    document.getElementById('sidebar-player-select').value = index;
+            // Window message listener for iframe communication
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'fullscreenRequest') {
+                    const playerId = event.data.playerId;
+                    togglePlayerFullscreen(playerId);
                 }
             });
             
-            // Add error event listener to iframe
-            player.iframe.addEventListener('error', function() {
-                handleStreamError(index);
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Escape exits fullscreen
+                if (e.key === 'Escape' && state.fullscreenPlayer !== null) {
+                    exitFullscreen();
+                }
+                
+                // Ctrl+R reloads all
+                if (e.ctrlKey && e.key === 'r') {
+                    e.preventDefault();
+                    reloadAll();
+                }
+                
+                // Ctrl+F toggles fullscreen
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }
             });
             
-            // Add load event listener to iframe
-            player.iframe.addEventListener('load', function() {
-                handleStreamLoad(index);
+            // URL input enter key
+            document.getElementById('url-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadURL();
+                }
             });
-        });
-        
-        // Definir player 0 como ativo inicialmente
-        if (container.children[0]) {
-            container.children[0].classList.add('active');
         }
-    }
-    
-    // Setup box selection
-    function setupBoxSelection() {
-        const checkboxes = document.querySelectorAll('.box-selection-group input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                applyBoxSelection();
-            });
-        });
-    }
-    
-    // Apply box selection
-    function applyBoxSelection() {
-        // Atualizar lista de boxes selecionadas
-        updateSelectedBoxes();
-        
-        // Mostrar/ocultar players conforme seleção
-        state.players.forEach((player, index) => {
-            const slot = document.querySelector(`.player-slot[data-player-index="${index}"]`);
-            if (slot) {
-                if (state.selectedBoxes.includes(index)) {
-                    slot.style.display = 'flex';
-                } else {
-                    slot.style.display = 'none';
-                    // Se o player estiver em fullscreen, sair do fullscreen
-                    if (player.isFullscreen) {
+
+        function updateBoxVisibility() {
+            const boxes = document.querySelectorAll('.player-slot');
+            boxes.forEach((box, index) => {
+                const checkbox = document.getElementById(`box${index + 1}`);
+                if (checkbox && !checkbox.checked) {
+                    box.style.display = 'none';
+                    // Exit fullscreen if this box is in fullscreen
+                    if (state.players[index].isFullscreen) {
                         exitPlayerFullscreen(index);
                     }
+                } else {
+                    box.style.display = 'flex';
                 }
-            }
-        });
-        
-        // Atualizar dropdown de layouts
-        updateLayoutDropdown();
-        
-        // Aplicar layout automático baseado no número de boxes
-        applyAutoLayout();
-        
-        updateStatus(`✅ Box selection applied: ${state.selectedBoxes.map(b => b+1).join(', ')}`, 'success');
-    }
-    
-    // Update selected boxes
-    function updateSelectedBoxes() {
-        const checkboxes = document.querySelectorAll('.box-selection-group input[type="checkbox"]');
-        state.selectedBoxes = [];
-        checkboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                state.selectedBoxes.push(parseInt(checkbox.value));
-            }
-        });
-    }
-    
-    // Update layout dropdown based on selected boxes
-    function updateLayoutDropdown() {
-        const boxCount = state.selectedBoxes.length;
-        const availableLayouts = state.layoutByBoxCount[boxCount] || [];
-        
-        // Atualizar dropdown na controls-box
-        const layoutSelect = document.getElementById('layout-select');
-        const currentLayout = layoutSelect.value;
-        
-        layoutSelect.innerHTML = '';
-        availableLayouts.forEach(layout => {
-            const option = document.createElement('option');
-            option.value = layout;
-            // Formatar o nome do layout para exibição
-            const displayName = layout.replace('layout-', '').toUpperCase();
-            option.textContent = displayName;
-            layoutSelect.appendChild(option);
-        });
-        
-        // Atualizar dropdown na sidebar
-        const sidebarLayoutSelect = document.getElementById('sidebar-layout-select');
-        sidebarLayoutSelect.innerHTML = '';
-        availableLayouts.forEach(layout => {
-            const option = document.createElement('option');
-            option.value = layout;
-            const displayName = layout.replace('layout-', '').toUpperCase();
-            option.textContent = displayName;
-            sidebarLayoutSelect.appendChild(option);
-        });
-        
-        // Se o layout atual não estiver disponível, mudar para o primeiro disponível
-        if (!availableLayouts.includes(currentLayout) && availableLayouts.length > 0) {
-            changeLayout(availableLayouts[0]);
-        } else if (availableLayouts.length > 0) {
-            // Se o layout atual estiver disponível, garantir que está selecionado
-            layoutSelect.value = currentLayout;
-            sidebarLayoutSelect.value = currentLayout;
+            });
+            
+            // Reapply layout
+            changeLayout(state.currentLayout);
         }
-    }
-    
-    // Apply auto layout based on number of boxes
-    function applyAutoLayout() {
-        const boxCount = state.selectedBoxes.length;
-        
-        // Determinar layout padrão baseado no número de boxes e orientação
-        let defaultLayout;
-        
-        if (boxCount === 1) {
-            defaultLayout = 'layout-1x1';
-        } else if (boxCount === 2) {
-            // Na horizontal, 1x2; na vertical, 2x1
-            defaultLayout = state.orientation === 'landscape' ? 'layout-1x2' : 'layout-2x1';
-        } else if (boxCount === 3) {
-            defaultLayout = state.orientation === 'landscape' ? 'layout-1x3' : 'layout-3x1';
-        } else if (boxCount === 4) {
-            defaultLayout = 'layout-2x2';
-        } else {
-            defaultLayout = 'layout-1x1'; // fallback
-        }
-        
-        // Aplicar o layout
-        changeLayout(defaultLayout);
-    }
-    
-    // Change layout - FUNÇÃO PRINCIPAL CORRIGIDA
-    function changeLayout(layout) {
-        const container = document.getElementById('players-container');
-        
-        // Remover todas as classes de layout anteriores
-        container.className = 'players-container';
-        
-        // Adicionar a nova classe de layout
-        container.classList.add(layout);
-        state.currentLayout = layout;
-        
-        // Update dropdowns
-        document.getElementById('layout-select').value = layout;
-        document.getElementById('sidebar-layout-select').value = layout;
-        
-        // Ajustar o grid dinamicamente para os boxes visíveis
-        adjustLayoutForBoxes();
-        
-        updateStatus(`📐 Layout changed to ${layout.replace('layout-', '')}`, 'success');
-    }
-    
-    // FUNÇÃO NOVA: Ajustar layout dinamicamente para os boxes selecionados
-    function adjustLayoutForBoxes() {
-        const container = document.getElementById('players-container');
-        const visibleBoxes = container.querySelectorAll('.player-slot:not([style*="display: none"])');
-        const boxCount = visibleBoxes.length;
-        
-        if (boxCount === 0) return;
-        
-        // Obter configuração do layout atual
-        const layoutConfig = state.layoutGridConfig[state.currentLayout] || { cols: 2, rows: 2 };
-        
-        // Calcular grid baseado no número de boxes visíveis
-        let calculatedCols = layoutConfig.cols;
-        let calculatedRows = layoutConfig.rows;
-        
-        // Se temos menos boxes que o layout espera, ajustar
-        const expectedBoxes = layoutConfig.cols * layoutConfig.rows;
-        if (boxCount < expectedBoxes) {
-            // Reduzir o grid para caber os boxes disponíveis
-            if (state.currentLayout.includes('x1') || state.currentLayout === 'layout-1x1') {
-                // Layouts horizontais ou single
-                calculatedCols = Math.min(boxCount, 4);
-                calculatedRows = 1;
-            } else if (state.currentLayout.includes('1x')) {
-                // Layouts verticais
-                calculatedCols = 1;
-                calculatedRows = Math.min(boxCount, 4);
-            } else {
-                // Layouts quadrados (2x2)
-                if (boxCount <= 1) {
-                    calculatedCols = calculatedRows = 1;
-                } else if (boxCount <= 2) {
-                    calculatedCols = 2;
-                    calculatedRows = 1;
-                } else if (boxCount <= 4) {
-                    calculatedCols = 2;
-                    calculatedRows = 2;
+
+        function loadURL() {
+            const url = document.getElementById('url-input').value.trim();
+            const playerIndex = parseInt(document.getElementById('player-select').value);
+            
+            if (!url) {
+                updateStatus('Please enter a URL', 'error');
+                return;
+            }
+            
+            const player = state.players[playerIndex];
+            
+            // Add to history
+            if (player.currentUrl) {
+                player.history.push(player.currentUrl);
+                player.historyIndex = player.history.length - 1;
+            }
+            
+            player.currentUrl = url;
+            player.loading = true;
+            
+            // Show loading indicator
+            document.getElementById(`loading-${playerIndex}`).classList.add('loading');
+            
+            // Load URL with additional parameters for better compatibility
+            let finalUrl = url;
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                if (!url.includes('embed')) {
+                    // Convert YouTube URL to embed format
+                    const videoId = extractYouTubeId(url);
+                    if (videoId) {
+                        finalUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+                    }
                 }
+            } else if (url.includes('m3u8')) {
+                // For HLS streams, we could use a video player
+                // For now, we'll try to load in iframe
+                finalUrl = `https://player.vimeo.com/video?url=${encodeURIComponent(url)}`;
+            }
+            
+            // Add autoplay parameter if not present
+            if (!finalUrl.includes('autoplay=')) {
+                finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'autoplay=1';
+            }
+            
+            // Add mute parameter to avoid autoplay restrictions
+            if (!finalUrl.includes('mute=')) {
+                finalUrl += '&mute=1';
+            }
+            
+            player.iframe.src = finalUrl;
+            updateStatus(`Loading URL in Player ${playerIndex + 1}`, 'info');
+        }
+
+        function extractYouTubeId(url) {
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function reloadPlayer(playerIndex) {
+            const player = state.players[playerIndex];
+            if (player.iframe && player.iframe.src && player.iframe.src !== 'about:blank') {
+                player.loading = true;
+                document.getElementById(`loading-${playerIndex}`).classList.add('loading');
+                player.iframe.src = player.iframe.src + '&t=' + Date.now();
+                updateStatus(`Reloading Player ${playerIndex + 1}`, 'info');
             }
         }
-        
-        // Aplicar o grid calculado
-        container.style.gridTemplateColumns = `repeat(${calculatedCols}, 1fr)`;
-        container.style.gridTemplateRows = `repeat(${calculatedRows}, 1fr)`;
-        
-        // Reposicionar os boxes no grid
-        visibleBoxes.forEach((box, index) => {
-            const row = Math.floor(index / calculatedCols);
-            const col = index % calculatedCols;
-            
-            box.style.gridColumn = `${col + 1} / span 1`;
-            box.style.gridRow = `${row + 1} / span 1`;
-            
-            // Garantir que os elementos de vídeo preenchem o espaço
-            const iframe = box.querySelector('.stream-player');
-            const video = box.querySelector('.video-player');
-            
-            if (iframe) {
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.minHeight = '0';
-            }
-            if (video) {
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.minHeight = '0';
-            }
-        });
-        
-        // Se houver espaços vazios no grid, ajustar o último elemento para ocupar
-        if (boxCount > 0 && boxCount < calculatedCols * calculatedRows) {
-            const lastBox = visibleBoxes[boxCount - 1];
-            const emptyCells = (calculatedCols * calculatedRows) - boxCount;
-            
-            if (emptyCells > 0 && calculatedCols > 1) {
-                // Fazer o último elemento ocupar colunas extras se houver espaço
-                const colspan = Math.min(emptyCells + 1, calculatedCols);
-                lastBox.style.gridColumn = `span ${colspan}`;
+
+        function navigateBack(playerIndex) {
+            const player = state.players[playerIndex];
+            if (player.historyIndex > 0) {
+                player.historyIndex--;
+                const url = player.history[player.historyIndex];
+                player.currentUrl = url;
+                player.iframe.src = url;
+                updateStatus(`Going back in Player ${playerIndex + 1}`, 'info');
             }
         }
-    }
-    
-    // Setup fullscreen controls
-    function setupFullscreenControls() {
-        const fullscreenBtn = document.getElementById('fullscreen-app');
-        if (fullscreenBtn) {
-            fullscreenBtn.onclick = toggleAppFullscreen;
-        }
-    }
-    
-    // Setup all button events
-    function setupAllButtonEvents() {
-        // Botão Fullscreen no Stream Controls
-        const fullscreenBtn = document.getElementById('fullscreen-app');
-        if (fullscreenBtn) {
-            fullscreenBtn.onclick = toggleAppFullscreen;
-        }
-        
-        // Botão de toggle orientation
-        const orientationBtn = document.getElementById('orientation-btn');
-        if (orientationBtn) {
-            orientationBtn.onclick = toggleOrientation;
-        }
-        
-        // Botão de options
-        const optionsBtn = document.querySelector('button[onclick="openOptionsPopup()"]');
-        if (optionsBtn) {
-            optionsBtn.onclick = openOptionsPopup;
-        }
-        
-        // Botão de menu
-        const menuBtn = document.querySelector('button[onclick="toggleMainSidebar()"]');
-        if (menuBtn) {
-            menuBtn.onclick = toggleMainSidebar;
-        }
-        
-        // Botões de play/reload/clear
-        const playAllBtn = document.querySelector('button[onclick="playAllStreams()"]');
-        const reloadAllBtn = document.querySelector('button[onclick="forceReloadAllStreams()"]');
-        const clearAllBtn = document.querySelector('button[onclick="clearAllPlayers()"]');
-        
-        if (playAllBtn) playAllBtn.onclick = playAllStreams;
-        if (reloadAllBtn) reloadAllBtn.onclick = forceReloadAllStreams;
-        if (clearAllBtn) clearAllBtn.onclick = clearAllPlayers;
-    }
-    
-    // Toggle app fullscreen
-    function toggleAppFullscreen() {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            // Entrar em fullscreen
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen();
+
+        function navigateForward(playerIndex) {
+            const player = state.players[playerIndex];
+            if (player.historyIndex < player.history.length - 1) {
+                player.historyIndex++;
+                const url = player.history[player.historyIndex];
+                player.currentUrl = url;
+                player.iframe.src = url;
+                updateStatus(`Going forward in Player ${playerIndex + 1}`, 'info');
             }
-            document.body.classList.add('fullscreen-app');
-            state.isAppFullscreen = true;
-            
-            // Atualizar botão
-            const btn = document.getElementById('fullscreen-app');
-            if (btn) btn.textContent = '⛶ Exit Full';
-            
-            updateStatus('⛶ App em tela cheia', 'success');
-        } else {
-            // Sair do fullscreen
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            }
-            document.body.classList.remove('fullscreen-app');
-            state.isAppFullscreen = false;
-            
-            // Atualizar botão
-            const btn = document.getElementById('fullscreen-app');
-            if (btn) btn.textContent = '⛶ Full';
-            
-            updateStatus('📱 App em janela', 'success');
         }
-    }
-    
-    // Toggle player fullscreen
-    function togglePlayerFullscreen(playerIndex) {
-        const player = state.players[playerIndex];
-        if (!player.isFullscreen) {
-            enterPlayerFullscreen(playerIndex);
-        } else {
-            exitPlayerFullscreen(playerIndex);
-        }
-    }
-    
-    function enterPlayerFullscreen(playerIndex) {
-        const player = state.players[playerIndex];
-        const playerSlot = player.iframe.parentElement;
-        
-        playerSlot.classList.add('fullscreen');
-        player.isFullscreen = true;
-        state.fullscreenPlayer = playerIndex;
-        
-        // Add fullscreen controls
-        if (!playerSlot.querySelector('.fullscreen-controls')) {
-            const controls = document.createElement('div');
-            controls.className = 'fullscreen-controls';
-            controls.innerHTML = `
-                <button onclick="cycleStream(${playerIndex}, -1)">◀</button>
-                <button onclick="cycleStream(${playerIndex}, 1)">▶</button>
-                <button onclick="exitPlayerFullscreen(${playerIndex})">✕</button>
-            `;
-            playerSlot.appendChild(controls);
-        }
-    }
-    
-    function exitPlayerFullscreen(playerIndex) {
-        const player = state.players[playerIndex];
-        const playerSlot = player.iframe.parentElement;
-        
-        playerSlot.classList.remove('fullscreen');
-        player.isFullscreen = false;
-        state.fullscreenPlayer = null;
-        
-        const controls = playerSlot.querySelector('.fullscreen-controls');
-        if (controls) controls.remove();
-    }
-    
-    // Update sidebar for current player
-    function updateSidebarForPlayer() {
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        state.currentPlayer = playerIndex;
-        const player = state.players[state.currentPlayer];
-        if (!player) return;
-        
-        // Update stream selector
-        const streamSelect = document.getElementById('sidebar-stream-select');
-        streamSelect.innerHTML = '<option value="">Select Stream</option>';
-        if (player.availableStreams && player.availableStreams.length > 0) {
-            player.availableStreams.forEach((stream, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.selected = index === player.currentStreamIndex;
-                const name = stream.name || `Stream ${index + 1}`;
-                option.textContent = name.length > 30 ? name.substring(0, 30) + '...' : name;
-                option.title = name;
-                streamSelect.appendChild(option);
+
+        function toggleSpeedMenu(playerIndex) {
+            const menu = document.getElementById(`speed-menu-${playerIndex}`);
+            menu.classList.toggle('show');
+            
+            // Close other speed menus
+            document.querySelectorAll('.speed-dropdown').forEach(m => {
+                if (m.id !== `speed-menu-${playerIndex}`) {
+                    m.classList.remove('show');
+                }
             });
         }
-        
-        // Update URL input
-        document.getElementById('sidebar-url-input').value = player.currentUrl || '';
-        
-        // Update favorite button
-        updateFavoriteButton();
-        
-        // Update history and favorites dropdowns
-        updateHistoryDropdown();
-        updateFavoritesDropdown();
-        
-        // Update quality selector if HLS is active
-        if (player.hls && player.qualityLevels) {
-            updateQualitySelector(playerIndex);
-        }
-    }
-    
-    // Handle fullscreen change
-    function handleFullscreenChange() {
-        state.isAppFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        
-        if (!state.isAppFullscreen) {
-            document.body.classList.remove('fullscreen-app');
-            // Hide sidebar
-            const sidebar = document.getElementById('main-sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-            state.sidebarVisible = false;
+
+        function setSpeed(playerIndex, speed) {
+            const player = state.players[playerIndex];
+            player.playbackRate = speed;
             
-            // Exit individual player fullscreen
+            // Update button text
+            const button = document.querySelector(`#speed-menu-${playerIndex}`).previousElementSibling;
+            button.textContent = `${speed}x`;
+            
+            // Update active class
+            document.querySelectorAll(`#speed-menu-${playerIndex} .speed-option`).forEach(opt => {
+                opt.classList.remove('active');
+                if (parseFloat(opt.textContent) === speed) {
+                    opt.classList.add('active');
+                }
+            });
+            
+            // Close menu
+            document.getElementById(`speed-menu-${playerIndex}`).classList.remove('show');
+            
+            // Try to set playback rate on iframe
+            try {
+                const iframe = player.iframe;
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const videos = iframeDoc.querySelectorAll('video');
+                videos.forEach(video => {
+                    video.playbackRate = speed;
+                });
+            } catch (e) {
+                // Cross-origin restriction
+            }
+            
+            updateStatus(`Player ${playerIndex + 1} speed: ${speed}x`, 'success');
+        }
+
+        function togglePlayerFullscreen(playerIndex) {
+            const player = state.players[playerIndex];
+            const slot = document.querySelector(`.player-slot[data-player-id="${playerIndex}"]`);
+            
+            if (player.isFullscreen) {
+                exitPlayerFullscreen(playerIndex);
+            } else {
+                // Exit any other fullscreen player
+                if (state.fullscreenPlayer !== null) {
+                    exitPlayerFullscreen(state.fullscreenPlayer);
+                }
+                
+                enterPlayerFullscreen(playerIndex, slot);
+            }
+        }
+
+        function enterPlayerFullscreen(playerIndex, slot) {
+            const player = state.players[playerIndex];
+            player.isFullscreen = true;
+            state.fullscreenPlayer = playerIndex;
+            slot.classList.add('fullscreen');
+            
+            // Hide other controls
+            document.querySelectorAll('.main-controls, .url-input-container, .box-selector').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            updateStatus(`Player ${playerIndex + 1} fullscreen`, 'info');
+        }
+
+        function exitPlayerFullscreen(playerIndex) {
+            const player = state.players[playerIndex];
+            const slot = document.querySelector(`.player-slot[data-player-id="${playerIndex}"]`);
+            
+            player.isFullscreen = false;
+            state.fullscreenPlayer = null;
+            slot.classList.remove('fullscreen');
+            
+            // Show controls
+            document.querySelectorAll('.main-controls, .url-input-container, .box-selector').forEach(el => {
+                el.style.display = 'flex';
+            });
+            
+            updateStatus(`Exited fullscreen`, 'info');
+        }
+
+        function exitFullscreen() {
             if (state.fullscreenPlayer !== null) {
                 exitPlayerFullscreen(state.fullscreenPlayer);
             }
-            
-            // Atualizar botão fullscreen
-            const btn = document.getElementById('fullscreen-app');
-            if (btn) btn.textContent = '⛶ Full';
         }
-    }
-    
-    // Toggle controls
-    function toggleControls() {
-        const controlsBox = document.getElementById('controls-box');
-        const minimizeBtn = document.getElementById('minimize-btn');
-        
-        state.controlsMinimized = !state.controlsMinimized;
-        controlsBox.classList.toggle('minimized', state.controlsMinimized);
-        minimizeBtn.textContent = state.controlsMinimized ? '+' : '−';
-    }
-    
-    // Toggle orientation
-    function toggleOrientation() {
-        state.orientation = state.orientation === 'landscape' ? 'portrait' : 'landscape';
-        document.body.classList.remove('orientation-landscape', 'orientation-portrait');
-        document.body.classList.add(`orientation-${state.orientation}`);
-        
-        const btn = document.getElementById('orientation-btn');
-        btn.textContent = `📱 ${state.orientation.charAt(0).toUpperCase() + state.orientation.slice(1)}`;
-        
-        // Ajustar layout para a nova orientação
-        applyAutoLayout();
-    }
-    
-    // Detect orientation
-    function detectOrientation() {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        state.orientation = isPortrait ? 'portrait' : 'landscape';
-        
-        document.body.classList.remove('orientation-landscape', 'orientation-portrait');
-        document.body.classList.add(`orientation-${state.orientation}`);
-        
-        // Se houver menos de 4 boxes, ajustar layout para orientação
-        if (state.selectedBoxes.length < 4) {
-            applyAutoLayout();
-        }
-    }
-    
-    // Load football matches - função original que funciona
-    async function loadFootballMatches() {
-        try {
-            updateStatus('⚽ Loading matches...', 'loading');
-            document.getElementById('matches-loading').style.display = 'block';
-            
-            const response = await fetchWithTimeout('https://streamed.pk/api/matches/live', 10000);
-            const matches = await response.json();
-            
-            if (!Array.isArray(matches)) {
-                throw new Error('Invalid API response format');
-            }
-            
-            // Filter football matches - usando category em vez de sport
-            const footballMatches = matches.filter(match => {
-                if (match.category === 'football') return true;
-                
-                if (match.title && (
-                    match.title.toLowerCase().includes('football') ||
-                    match.title.toLowerCase().includes('soccer') ||
-                    match.title.toLowerCase().includes('premier') ||
-                    match.title.toLowerCase().includes('champions league') ||
-                    match.title.toLowerCase().includes('la liga') ||
-                    match.title.toLowerCase().includes('serie a') ||
-                    match.title.toLowerCase().includes('bundesliga')
-                )) return true;
-                
-                if (match.teams && match.teams.home && match.teams.away) return true;
-                
-                return false;
-            });
-            
-            if (footballMatches.length === 0) {
-                updateStatus('❌ No football matches found', 'error');
-                document.getElementById('matches-loading').style.display = 'none';
-                return;
-            }
-            
-            updateStatus(`🔄 Loading streams...`, 'loading');
-            
-            const testedMatches = [];
-            const testPromises = footballMatches.map(async (match) => {
-                try {
-                    const streams = await getAllStreamsForMatch(match);
-                    if (streams && streams.length > 0) {
-                        match.workingStreams = streams;
-                        testedMatches.push(match);
-                        return true;
-                    }
-                } catch (e) {
-                    console.log(`❌ No streams for match: ${match.title}`);
-                }
-                return false;
-            });
-            
-            await Promise.allSettled(testPromises);
-            
-            if (testedMatches.length === 0) {
-                updateStatus('❌ No working streams', 'error');
+
+        function toggleFullscreen() {
+            if (state.fullscreenPlayer !== null) {
+                exitFullscreen();
             } else {
-                state.matches = testedMatches.sort((a, b) => {
-                    const aName = getMatchDisplayName(a);
-                    const bName = getMatchDisplayName(b);
-                    return aName.localeCompare(bName);
-                });
-                
-                updateStatus(`✅ ${state.matches.length} matches loaded`, 'success');
-                updateMatchDropdown();
-            }
-            
-        } catch (error) {
-            console.error('❌ Error loading matches:', error);
-            updateStatus(`❌ Error: ${error.message}`, 'error');
-        } finally {
-            document.getElementById('matches-loading').style.display = 'none';
-        }
-    }
-    
-    // Get all streams for a match - função original
-    async function getAllStreamsForMatch(match) {
-        if (!match.sources || match.sources.length === 0) {
-            return [];
-        }
-        
-        const allStreams = [];
-        const streamPromises = match.sources.map(async (source) => {
-            try {
-                const apiUrl = `https://streamed.pk/api/stream/${source.source}/${source.id}`;
-                const response = await fetchWithTimeout(apiUrl, 8000);
-                const streams = await response.json();
-                
-                if (streams && Array.isArray(streams)) {
-                    const streamsWithSource = streams.map(stream => ({
-                        ...stream,
-                        sourceName: source.source,
-                        sourceId: source.id
-                    }));
-                    
-                    return streamsWithSource;
-                }
-            } catch (error) {
-                console.warn(`❌ Source ${source.source} failed:`, error.message);
-            }
-            return [];
-        });
-        
-        try {
-            const results = await Promise.allSettled(streamPromises);
-            
-            results.forEach(result => {
-                if (result.status === 'fulfilled' && Array.isArray(result.value)) {
-                    allStreams.push(...result.value);
-                }
-            });
-        } catch (error) {
-            console.error('❌ Error fetching streams:', error);
-        }
-        
-        return allStreams;
-    }
-    
-    // Get display name for a match
-    function getMatchDisplayName(match) {
-        if (match.teams && match.teams.home && match.teams.away) {
-            return `${match.teams.home.name} vs ${match.teams.away.name}`;
-        }
-        return match.title || 'Unknown Match';
-    }
-    
-    // Update match dropdown
-    function updateMatchDropdown() {
-        const select = document.getElementById('sidebar-match-select');
-        select.innerHTML = '<option value="">Select Match</option>';
-        
-        state.matches.forEach((match, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = getMatchDisplayName(match);
-            option.title = getMatchDisplayName(match);
-            select.appendChild(option);
-        });
-    }
-    
-    // Load selected match
-    function loadSelectedMatch() {
-        const matchIndex = document.getElementById('sidebar-match-select').value;
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        
-        if (!matchIndex) {
-            updateStatus('❌ Please select a match', 'error');
-            return;
-        }
-        
-        const match = state.matches[matchIndex];
-        if (match && match.workingStreams && match.workingStreams.length > 0) {
-            const player = state.players[playerIndex];
-            player.availableStreams = match.workingStreams;
-            player.currentStreamIndex = 0;
-            player.currentStream = match.workingStreams[0];
-            player.currentMatch = match;
-            
-            const streamUrl = player.currentStream.embedUrl || player.currentStream.url;
-            loadStreamToPlayer(playerIndex, streamUrl);
-            
-            // Update sidebar
-            updateSidebarForPlayer();
-            
-            updateStatus(`✅ Match loaded to Player ${playerIndex + 1}`, 'success');
-        }
-    }
-    
-    // Load selected stream
-    function loadSelectedStream() {
-        const streamIndex = document.getElementById('sidebar-stream-select').value;
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        
-        if (!streamIndex) {
-            updateStatus('❌ Please select a stream', 'error');
-            return;
-        }
-        
-        const player = state.players[playerIndex];
-        if (player && player.availableStreams && player.availableStreams[streamIndex]) {
-            player.currentStreamIndex = parseInt(streamIndex);
-            player.currentStream = player.availableStreams[streamIndex];
-            
-            const streamUrl = player.currentStream.embedUrl || player.currentStream.url;
-            loadStreamToPlayer(playerIndex, streamUrl);
-            
-            updateStatus(`✅ Stream loaded to Player ${playerIndex + 1}`, 'success');
-        }
-    }
-    
-    // Load stream to player
-    function loadStreamToPlayer(playerIndex, url) {
-        const player = state.players[playerIndex];
-        if (!player) return;
-        
-        player.isLoading = true;
-        player.hasError = false;
-        
-        // Show loading state
-        if (player.streamCounterElement) {
-            player.streamCounterElement.classList.add('stream-loading');
-            player.streamCounterElement.classList.remove('stream-error');
-        }
-        
-        if (player.overlay) {
-            player.overlay.style.display = 'flex';
-            player.overlay.innerHTML = '<div class="overlay-content"><p>Loading stream...</p></div>';
-        }
-        
-        // Check if it's HLS
-        if (url.includes('.m3u8') && Hls.isSupported()) {
-            loadHLSStream(playerIndex, url);
-        } else {
-            loadIframeStream(playerIndex, url);
-        }
-        
-        // Add to history
-        addToHistory(url, getShortUrl(url));
-        
-        // Update stream counter
-        updateStreamCounter(playerIndex);
-    }
-    
-    // Load HLS stream
-    function loadHLSStream(playerIndex, url) {
-        const player = state.players[playerIndex];
-        
-        // Hide iframe, show video
-        player.iframe.style.display = 'none';
-        player.videoElement.style.display = 'block';
-        
-        // Destroy existing HLS instance
-        if (player.hls) {
-            player.hls.destroy();
-            player.hls = null;
-        }
-        
-        const hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            backBufferLength: 90
-        });
-        
-        hls.loadSource(url);
-        hls.attachMedia(player.videoElement);
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            player.qualityLevels = hls.levels;
-            updateQualitySelector(playerIndex);
-            player.videoElement.muted = true;
-            player.videoElement.play().catch(e => {
-                console.log('Autoplay prevented:', e);
-            });
-            
-            // Hide overlay
-            if (player.overlay) player.overlay.style.display = 'none';
-            player.isLoading = false;
-        });
-        
-        hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('HLS error:', data);
-            if (data.fatal) {
-                switch(data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        hls.startLoad();
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        hls.recoverMediaError();
-                        break;
-                    default:
-                        // Fallback to iframe
-                        loadIframeStream(playerIndex, url);
-                        break;
+                // Enter app fullscreen
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
                 }
             }
-        });
-        
-        player.hls = hls;
-    }
-    
-    // Load iframe stream
-    function loadIframeStream(playerIndex, url) {
-        const player = state.players[playerIndex];
-        
-        // Hide video, show iframe
-        player.videoElement.style.display = 'none';
-        player.iframe.style.display = 'block';
-        
-        // Apply iframe options
-        applyIframeOptions(player.iframe);
-        
-        // Add autoplay and mute parameters
-        let streamUrl = url;
-        if (url.startsWith('http')) {
-            try {
-                const urlObj = new URL(url);
-                urlObj.searchParams.set('autoplay', '1');
-                urlObj.searchParams.set('mute', '1');
-                urlObj.searchParams.set('playsinline', '1');
-                urlObj.searchParams.set('t', Date.now());
-                streamUrl = urlObj.toString();
-            } catch (e) {
-                // If URL parsing fails, append parameters
-                const params = new URLSearchParams();
-                params.append('autoplay', '1');
-                params.append('mute', '1');
-                params.append('t', Date.now());
-                
-                streamUrl = url.includes('?') ? 
-                    url + '&' + params.toString() : 
-                    url + '?' + params.toString();
-            }
         }
-        
-        player.iframe.src = streamUrl;
-        
-        // Hide overlay after delay
-        setTimeout(() => {
-            if (player.overlay) player.overlay.style.display = 'none';
-            player.isLoading = false;
-        }, 1000);
-    }
-    
-    // Apply iframe options
-    function applyIframeOptions(iframe) {
-        if (state.advancedOptions.hideReferrer) {
-            iframe.referrerPolicy = 'no-referrer';
+
+        function changeLayout(layout) {
+            const container = document.getElementById('players-container');
+            container.className = 'players-container ' + layout;
+            state.currentLayout = layout;
+            updateStatus(`Layout changed to ${layout.replace('layout-', '')}`, 'success');
         }
-        
-        // Configure sandbox based on options
-        let sandbox = 'allow-scripts allow-same-origin';
-        if (state.advancedOptions.allowForms) sandbox += ' allow-forms';
-        if (state.advancedOptions.allowPopups) sandbox += ' allow-popups';
-        iframe.sandbox = sandbox;
-    }
-    
-    // Update stream counter
-    function updateStreamCounter(playerIndex) {
-        const player = state.players[playerIndex];
-        if (!player.streamCounterElement) return;
-        
-        if (player.currentUrl) {
-            player.streamCounterElement.textContent = getShortUrl(player.currentUrl);
-        } else if (player.availableStreams.length > 0) {
-            player.streamCounterElement.textContent = 
-                `${player.currentStreamIndex + 1}/${player.availableStreams.length}`;
-        } else {
-            player.streamCounterElement.textContent = '';
-        }
-    }
-    
-    // Get short URL
-    function getShortUrl(url) {
-        if (!url) return '';
-        try {
-            const urlObj = new URL(url);
-            return urlObj.hostname.replace('www.', '');
-        } catch {
-            return url.length > 20 ? url.substring(0, 20) + '...' : url;
-        }
-    }
-    
-    // Handle stream load
-    function handleStreamLoad(playerIndex) {
-        const player = state.players[playerIndex];
-        player.isLoading = false;
-        player.hasError = false;
-        
-        // Remove loading/error states
-        if (player.streamCounterElement) {
-            player.streamCounterElement.classList.remove('stream-loading', 'stream-error');
-        }
-    }
-    
-    // Handle stream error
-    function handleStreamError(playerIndex) {
-        const player = state.players[playerIndex];
-        player.isLoading = false;
-        player.hasError = true;
-        
-        // Show error state
-        if (player.streamCounterElement) {
-            player.streamCounterElement.classList.add('stream-error');
-            player.streamCounterElement.textContent = 'ERROR';
-        }
-        
-        // Show error message in overlay
-        if (player.overlay) {
-            player.overlay.innerHTML = `
-                <div class="overlay-content">
-                    <p>❌ Stream failed to load</p>
-                    <button onclick="hideOverlay(${playerIndex})">OK</button>
-                    <button onclick="forceReloadStream(${playerIndex})">Retry</button>
-                </div>
-            `;
-            player.overlay.style.display = 'flex';
-        }
-        
-        updateStatus(`❌ Player ${playerIndex + 1} stream error`, 'error');
-    }
-    
-    // Hide overlay
-    function hideOverlay(playerIndex) {
-        const player = state.players[playerIndex];
-        if (player.overlay) {
-            player.overlay.style.display = 'none';
-        }
-    }
-    
-    // Force reload stream
-    function forceReloadStream(playerIndex) {
-        const player = state.players[playerIndex];
-        if (!player) return;
-        
-        player.isLoading = true;
-        player.hasError = false;
-        
-        // Show loading state
-        if (player.streamCounterElement) {
-            player.streamCounterElement.classList.add('stream-loading');
-            player.streamCounterElement.classList.remove('stream-error');
-        }
-        
-        if (player.overlay) {
-            player.overlay.style.display = 'flex';
-            player.overlay.innerHTML = `
-                <div class="overlay-content">
-                    <p>🔄 Reloading stream...</p>
-                </div>
-            `;
-        }
-        
-        if (player.currentUrl) {
-            loadStreamToPlayer(playerIndex, player.currentUrl);
-        } else if (player.currentStream) {
-            const streamUrl = player.currentStream.embedUrl || player.currentStream.url;
-            loadStreamToPlayer(playerIndex, streamUrl);
-        }
-    }
-    
-    // Toggle sidebar
-    function toggleMainSidebar() {
-        const sidebar = document.getElementById('main-sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-        state.sidebarVisible = !state.sidebarVisible;
-        
-        sidebar.classList.toggle('active', state.sidebarVisible);
-        overlay.classList.toggle('active', state.sidebarVisible);
-        
-        if (state.sidebarVisible) {
-            updateSidebarForPlayer();
-        }
-    }
-    
-    // Load URL from sidebar
-    function loadSidebarURL() {
-        const url = document.getElementById('sidebar-url-input').value.trim();
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        
-        if (!url) {
-            updateStatus('❌ Please enter a URL', 'error');
-            return;
-        }
-        
-        const player = state.players[playerIndex];
-        player.currentUrl = url;
-        player.currentStream = null;
-        player.availableStreams = [];
-        
-        loadStreamToPlayer(playerIndex, url);
-        updateStatus(`✅ URL loaded to Player ${playerIndex + 1}`, 'success');
-    }
-    
-    // Cycle through streams
-    function cycleStream(playerIndex, direction) {
-        const player = state.players[playerIndex];
-        
-        if (player.currentUrl) {
-            updateStatus(`❌ Player ${playerIndex + 1} using URL`, 'error');
-            return;
-        }
-        
-        if (!player || !player.availableStreams || player.availableStreams.length <= 1) {
-            updateStatus('❌ No streams available to cycle', 'error');
-            return;
-        }
-        
-        const newIndex = (player.currentStreamIndex + direction + player.availableStreams.length) % player.availableStreams.length;
-        player.currentStreamIndex = newIndex;
-        player.currentStream = player.availableStreams[newIndex];
-        
-        const streamUrl = player.currentStream.embedUrl || player.currentStream.url;
-        loadStreamToPlayer(playerIndex, streamUrl);
-        updateStatus(`🔄 Player ${playerIndex + 1}: Stream ${newIndex + 1}`, 'success');
-    }
-    
-    // Play all streams
-    function playAllStreams() {
-        state.players.forEach((player, index) => {
-            if (player.currentStream || player.currentUrl) {
-                if (player.hls && player.videoElement) {
-                    player.videoElement.muted = true;
-                    player.videoElement.play().catch(e => console.log('Autoplay prevented:', e));
-                } else if (player.iframe) {
-                    player.iframe.src = player.iframe.src;
-                }
-            }
-        });
-        updateStatus('▶️ All streams playing', 'success');
-    }
-    
-    // Force reload all streams
-    function forceReloadAllStreams() {
-        state.players.forEach((player, index) => {
-            if (player.currentStream || player.currentUrl) {
-                if (player.hls) {
-                    player.hls.destroy();
-                    if (player.currentUrl) {
-                        loadStreamToPlayer(index, player.currentUrl);
+
+        function playAll() {
+            state.players.forEach((player, index) => {
+                if (player.iframe && player.iframe.src && player.iframe.src !== 'about:blank') {
+                    try {
+                        const iframe = player.iframe;
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const videos = iframeDoc.querySelectorAll('video');
+                        videos.forEach(video => {
+                            video.play().catch(e => console.log('Autoplay prevented'));
+                        });
+                    } catch (e) {
+                        // Cross-origin restriction
                     }
-                } else if (player.iframe) {
-                    loadStreamToPlayer(index, player.currentUrl || player.currentStream.embedUrl || player.currentStream.url);
                 }
-            }
-        });
-        updateStatus('🔄 All streams reloaded', 'success');
-    }
-    
-    // Clear all players
-    function clearAllPlayers() {
-        state.players.forEach((player, index) => {
-            if (player.hls) {
-                player.hls.destroy();
-                player.hls = null;
-            }
-            if (player.iframe) {
+            });
+            updateStatus('Playing all streams', 'success');
+        }
+
+        function reloadAll() {
+            state.players.forEach((player, index) => {
+                if (player.iframe && player.iframe.src && player.iframe.src !== 'about:blank') {
+                    reloadPlayer(index);
+                }
+            });
+        }
+
+        function clearAll() {
+            state.players.forEach((player, index) => {
                 player.iframe.src = 'about:blank';
-            }
-            if (player.videoElement) {
-                player.videoElement.src = '';
-                player.videoElement.style.display = 'none';
-            }
+                player.currentUrl = null;
+                player.history = [];
+                player.historyIndex = -1;
+                document.getElementById(`loading-${index}`).classList.remove('loading');
+            });
+            updateStatus('All players cleared', 'success');
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
             
-            player.currentUrl = null;
-            player.currentStream = null;
-            player.availableStreams = [];
-            player.currentStreamIndex = 0;
-            updateStreamCounter(index);
-            
-            if (player.overlay) {
-                player.overlay.style.display = 'none';
-            }
-        });
-        updateStatus('🗑️ All players cleared', 'success');
-    }
-    
-    // Setup PWA
-    function setupPWA() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            state.deferredPrompt = e;
-            const installBtn = document.getElementById('install-pwa');
-            if (installBtn) {
-                installBtn.style.display = 'inline-block';
-                installBtn.onclick = () => e.prompt();
-            }
-        });
-    }
-    
-    // Setup fullscreen
-    function setupFullscreen() {
-        const fullscreenBtn = document.getElementById('fullscreen-app');
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', toggleAppFullscreen);
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 3000);
         }
-    }
-    
-    // Setup options popup
-    function setupOptionsPopup() {
-        document.getElementById('option-referrer').checked = state.advancedOptions.hideReferrer;
-        document.getElementById('option-useragent').checked = state.advancedOptions.maskUserAgent;
-        document.getElementById('option-allowscripts').checked = state.advancedOptions.allowScripts;
-        document.getElementById('option-allowforms').checked = state.advancedOptions.allowForms;
-        document.getElementById('option-allowpopups').checked = state.advancedOptions.allowPopups;
-    }
-    
-    // Open options popup
-    function openOptionsPopup() {
-        document.getElementById('options-popup').classList.add('active');
-    }
-    
-    // Close options popup
-    function closeOptionsPopup() {
-        document.getElementById('options-popup').classList.remove('active');
-    }
-    
-    // Apply options and close popup
-    function applyOptionsAndClose() {
-        applyAdvancedOptions();
-        closeOptionsPopup();
-    }
-    
-    // Apply advanced options
-    function applyAdvancedOptions() {
-        state.advancedOptions.hideReferrer = document.getElementById('option-referrer').checked;
-        state.advancedOptions.maskUserAgent = document.getElementById('option-useragent').checked;
-        state.advancedOptions.allowScripts = document.getElementById('option-allowscripts').checked;
-        state.advancedOptions.allowForms = document.getElementById('option-allowforms').checked;
-        state.advancedOptions.allowPopups = document.getElementById('option-allowpopups').checked;
-        
-        updateStatus('⚙️ Options applied', 'success');
-    }
-    
-    // History and favorites functions
-    function loadHistoryAndFavorites() {
-        try {
-            const savedHistory = localStorage.getItem('streamHistory');
-            const savedFavorites = localStorage.getItem('streamFavorites');
-            
-            if (savedHistory) {
-                state.history = JSON.parse(savedHistory);
-            }
-            
-            if (savedFavorites) {
-                state.favorites = JSON.parse(savedFavorites);
-            }
-            
-            updateHistoryDropdown();
-            updateFavoritesDropdown();
-        } catch (e) {
-            console.error('Error loading history/favorites:', e);
-        }
-    }
-    
-    function addToHistory(url, title = 'Custom URL') {
-        state.history = state.history.filter(item => item.url !== url);
-        
-        state.history.unshift({ url, title, timestamp: Date.now() });
-        
-        if (state.history.length > 10) {
-            state.history = state.history.slice(0, 10);
-        }
-        
-        saveHistoryAndFavorites();
-        updateHistoryDropdown();
-    }
-    
-    function toggleFavorite(url, title = 'Custom URL') {
-        const existingIndex = state.favorites.findIndex(item => item.url === url);
-        
-        if (existingIndex >= 0) {
-            state.favorites.splice(existingIndex, 1);
-            return false;
-        } else {
-            if (state.favorites.length >= 10) {
-                state.favorites.pop();
-            }
-            state.favorites.unshift({ url, title, timestamp: Date.now() });
-            return true;
-        }
-    }
-    
-    function saveHistoryAndFavorites() {
-        try {
-            localStorage.setItem('streamHistory', JSON.stringify(state.history));
-            localStorage.setItem('streamFavorites', JSON.stringify(state.favorites));
-        } catch (e) {
-            console.error('Error saving history/favorites:', e);
-        }
-    }
-    
-    function updateHistoryDropdown() {
-        const select = document.getElementById('sidebar-history-select');
-        if (!select) return;
-        
-        select.innerHTML = '<option value="">Recent URLs</option>';
-        state.history.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.url;
-            option.textContent = item.title.length > 30 ? item.title.substring(0, 30) + '...' : item.title;
-            option.title = item.title;
-            select.appendChild(option);
-        });
-    }
-    
-    function updateFavoritesDropdown() {
-        const select = document.getElementById('sidebar-favorites-select');
-        if (!select) return;
-        
-        select.innerHTML = '<option value="">Favorites</option>';
-        state.favorites.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.url;
-            option.textContent = '⭐ ' + (item.title.length > 30 ? item.title.substring(0, 30) + '...' : item.title);
-            option.title = item.title;
-            select.appendChild(option);
-        });
-    }
-    
-    function updateFavoriteButton() {
-        const player = state.players[state.currentPlayer];
-        const btn = document.getElementById('sidebar-favorite-btn');
-        if (!btn || !player) return;
-        
-        const url = player.currentUrl;
-        if (url && state.favorites.some(fav => fav.url === url)) {
-            btn.textContent = '★';
-            btn.style.background = '#ff9800';
-            btn.title = 'Remove from favorites';
-        } else {
-            btn.textContent = '☆';
-            btn.style.background = '#ffc107';
-            btn.title = 'Add to favorites';
-        }
-    }
-    
-    function toggleCurrentFavoriteSidebar() {
-        const player = state.players[state.currentPlayer];
-        const url = player.currentUrl;
-        
-        if (!url) {
-            updateStatus('❌ No URL to favorite', 'error');
-            return;
-        }
-        
-        const title = `Player ${state.currentPlayer + 1} - ${new Date().toLocaleTimeString()}`;
-        const added = toggleFavorite(url, title);
-        
-        saveHistoryAndFavorites();
-        updateFavoritesDropdown();
-        updateFavoriteButton();
-        
-        updateStatus(added ? '⭐ Added to favorites' : '⭐ Removed from favorites', 'success');
-    }
-    
-    function loadFromSidebarHistory() {
-        const select = document.getElementById('sidebar-history-select');
-        const url = select.value;
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        
-        if (!url) {
-            updateStatus('❌ Please select a URL from history', 'error');
-            return;
-        }
-        
-        document.getElementById('sidebar-url-input').value = url;
-        loadSidebarURL();
-    }
-    
-    function loadFromSidebarFavorites() {
-        const select = document.getElementById('sidebar-favorites-select');
-        const url = select.value;
-        const playerIndex = parseInt(document.getElementById('sidebar-player-select').value);
-        
-        if (!url) {
-            updateStatus('❌ Please select a URL from favorites', 'error');
-            return;
-        }
-        
-        document.getElementById('sidebar-url-input').value = url;
-        loadSidebarURL();
-    }
-    
-    // Update quality selector
-    function updateQualitySelector(playerIndex) {
-        const player = state.players[playerIndex];
-        const selector = document.getElementById('quality-select');
-        
-        if (!selector || !player.hls || !player.qualityLevels) return;
-        
-        selector.innerHTML = '<option value="auto">Auto</option>';
-        player.qualityLevels.forEach((level, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `${level.height}p (${Math.round(level.bitrate / 1000)}kbps)`;
-            selector.appendChild(option);
-        });
-        
-        document.getElementById('quality-selector').classList.add('active');
-    }
-    
-    // Change quality
-    function changeQuality(levelIndex) {
-        const player = state.players[state.currentPlayer];
-        if (!player || !player.hls) return;
-        
-        if (levelIndex === 'auto') {
-            player.hls.currentLevel = -1;
-            player.currentQuality = 'auto';
-        } else {
-            const level = parseInt(levelIndex);
-            if (level >= 0 && level < player.qualityLevels.length) {
-                player.hls.currentLevel = level;
-                player.currentQuality = level;
-            }
-        }
-    }
-    
-    // Export config
-    function exportConfig() {
-        const config = {
-            players: state.players.map(player => ({
-                currentUrl: player.currentUrl,
-                currentStream: player.currentStream,
-                availableStreams: player.availableStreams,
-                currentStreamIndex: player.currentStreamIndex
-            })),
-            currentLayout: state.currentLayout,
-            advancedOptions: state.advancedOptions,
-            history: state.history,
-            favorites: state.favorites,
-            selectedBoxes: state.selectedBoxes,
-            exportDate: new Date().toISOString()
-        };
-        
-        const dataStr = JSON.stringify(config, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'football-stream-config.json';
-        link.click();
-        
-        URL.revokeObjectURL(url);
-        updateStatus('📤 Config exported', 'success');
-    }
-    
-    // Import config
-    function importConfig() {
-        document.getElementById('config-file').click();
-    }
-    
-    // Handle config file import
-    document.getElementById('config-file').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const config = JSON.parse(e.target.result);
-                
-                if (config.players) {
-                    config.players.forEach((playerConfig, index) => {
-                        if (index < state.players.length) {
-                            const player = state.players[index];
-                            player.currentUrl = playerConfig.currentUrl;
-                            player.currentStream = playerConfig.currentStream;
-                            player.availableStreams = playerConfig.availableStreams || [];
-                            player.currentStreamIndex = playerConfig.currentStreamIndex || 0;
-                            
-                            if (playerConfig.currentUrl) {
-                                loadStreamToPlayer(index, playerConfig.currentUrl);
-                            }
-                        }
-                    });
+
+        function loadInitialURLs() {
+            state.players.forEach((player, index) => {
+                if (player.currentUrl) {
+                    player.loading = true;
+                    document.getElementById(`loading-${index}`).classList.add('loading');
+                    player.iframe.src = player.currentUrl + (player.currentUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1';
                 }
-                
-                if (config.currentLayout) {
-                    changeLayout(config.currentLayout);
-                }
-                
-                if (config.advancedOptions) {
-                    state.advancedOptions = {...state.advancedOptions, ...config.advancedOptions};
-                    document.getElementById('option-referrer').checked = state.advancedOptions.hideReferrer;
-                    document.getElementById('option-useragent').checked = state.advancedOptions.maskUserAgent;
-                    document.getElementById('option-allowscripts').checked = state.advancedOptions.allowScripts;
-                    document.getElementById('option-allowforms').checked = state.advancedOptions.allowForms;
-                    document.getElementById('option-allowpopups').checked = state.advancedOptions.allowPopups;
-                }
-                
-                if (config.history) {
-                    state.history = config.history;
-                }
-                if (config.favorites) {
-                    state.favorites = config.favorites;
-                }
-                
-                if (config.selectedBoxes) {
-                    state.selectedBoxes = config.selectedBoxes;
-                    const checkboxes = document.querySelectorAll('.box-selection-group input[type="checkbox"]');
-                    checkboxes.forEach(checkbox => {
-                        checkbox.checked = state.selectedBoxes.includes(parseInt(checkbox.value));
-                    });
-                    applyBoxSelection();
-                }
-                
-                saveHistoryAndFavorites();
-                updateHistoryDropdown();
-                updateFavoritesDropdown();
-                
-                updateStatus('📥 Config imported', 'success');
-            } catch (error) {
-                console.error('❌ Error importing configuration:', error);
-                updateStatus('❌ Import error', 'error');
-            }
-        };
-        reader.readAsText(file);
-        
-        event.target.value = '';
-    });
-    
-    // Fetch with timeout
-    async function fetchWithTimeout(url, timeout = 8000) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
-        try {
-            const response = await fetch(url, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response;
-        } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-                throw new Error(`Request timeout after ${timeout}ms`);
-            }
-            throw error;
+            });
         }
-    }
-    
-    // Update status
-    function updateStatus(message, type = 'loading') {
-        const statusEl = document.getElementById('status-message');
-        statusEl.textContent = message;
-        statusEl.className = `status-message ${type} show`;
-        
-        setTimeout(() => {
-            statusEl.classList.remove('show');
-        }, 3000);
-    }
-    
-    // Setup mobile controls
-    function setupMobileControls() {
-        let lastTap = 0;
-        
-        document.addEventListener('touchstart', function(e) {
-            if (e.target.closest('.controls-box') || e.target.closest('.main-sidebar')) {
-                return;
-            }
-            
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            
-            if (tapLength < 300 && tapLength > 0) {
-                toggleControls();
-                e.preventDefault();
-            }
-            
-            lastTap = currentTime;
-        });
-        
-        document.addEventListener('touchstart', function(e) {
-            if (!e.target.closest('.controls-box') && !state.controlsMinimized) {
-                setTimeout(() => {
-                    if (!state.controlsMinimized) {
-                        toggleControls();
-                    }
-                }, 3000);
-            }
-        });
-    }
-    
-    // Make functions globally available
-    window.loadFootballMatches = loadFootballMatches;
-    window.togglePlayerFullscreen = togglePlayerFullscreen;
-    window.toggleAppFullscreen = toggleAppFullscreen;
-    window.toggleMainSidebar = toggleMainSidebar;
-    window.toggleControls = toggleControls;
-    window.toggleOrientation = toggleOrientation;
-    window.cycleStream = cycleStream;
-    window.playAllStreams = playAllStreams;
-    window.forceReloadAllStreams = forceReloadAllStreams;
-    window.clearAllPlayers = clearAllPlayers;
-    window.changeLayout = changeLayout;
-    window.changeQuality = changeQuality;
-    window.loadSelectedMatch = loadSelectedMatch;
-    window.loadSelectedStream = loadSelectedStream;
-    window.loadSidebarURL = loadSidebarURL;
-    window.openOptionsPopup = openOptionsPopup;
-    window.closeOptionsPopup = closeOptionsPopup;
-    window.applyOptionsAndClose = applyOptionsAndClose;
-    window.exportConfig = exportConfig;
-    window.importConfig = importConfig;
-    window.toggleCurrentFavoriteSidebar = toggleCurrentFavoriteSidebar;
-    window.loadFromSidebarHistory = loadFromSidebarHistory;
-    window.loadFromSidebarFavorites = loadFromSidebarFavorites;
-    window.updateSidebarForPlayer = updateSidebarForPlayer;
-    window.hideOverlay = hideOverlay;
-    window.forceReloadStream = forceReloadStream;
-    window.applyBoxSelection = applyBoxSelection;
-    window.adjustLayoutForBoxes = adjustLayoutForBoxes;
+
+        // Make functions available globally
+        window.loadURL = loadURL;
+        window.reloadPlayer = reloadPlayer;
+        window.navigateBack = navigateBack;
+        window.navigateForward = navigateForward;
+        window.toggleSpeedMenu = toggleSpeedMenu;
+        window.setSpeed = setSpeed;
+        window.togglePlayerFullscreen = togglePlayerFullscreen;
+        window.exitFullscreen = exitFullscreen;
+        window.toggleFullscreen = toggleFullscreen;
+        window.changeLayout = changeLayout;
+        window.playAll = playAll;
+        window.reloadAll = reloadAll;
+        window.clearAll = clearAll;
     </script>
 </body>
 </html>
