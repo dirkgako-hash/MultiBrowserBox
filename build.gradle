@@ -4,7 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.0'
+        // Usar versão compatível com Java 17
+        classpath 'com.android.tools.build:gradle:8.1.2'
     }
 }
 
