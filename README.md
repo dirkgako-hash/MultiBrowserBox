@@ -1,30 +1,14 @@
-# MultiBrowser Manager
+# MultiBrowser Box 📱🔲
 
-Um gerenciador de navegadores múltiplos para Android que permite visualizar vários navegadores simultaneamente em layouts dinâmicos.
+Um aplicativo Android avançado que permite executar múltiplos navegadores WebView isolados em diferentes layouts grid, cada um com seu próprio perfil, cache, cookies e suporte a extensões.
 
-## Características
+## 🚀 Funcionalidades
 
-- 🎯 **Multi-navegador**: Suporte a múltiplos navegadores em boxes
-- 🔄 **Layouts Dinâmicos**: Ajuste automático do layout baseado no número de perfis
-- 🛠️ **Extensões**: Suporte a extensões estilo Chrome
-- 🔒 **Isolamento por Perfil**: Cada perfil tem seu próprio ambiente
-- 📁 **Aba Múltiplas**: Navegação com abas em cada box
-- 🌙 **Modo Escuro**: Suporte nativo a temas escuros
-- 🔧 **Personalizável**: Configurações avançadas por perfil
+- **🔄 Layouts Dinâmicos**: Grids automáticos de 1x1 até 3x2 baseado nos perfis selecionados
+- **🔒 Isolamento Completo**: Cada perfil (P1-P6) tem seu próprio ambiente de navegação
+- **🧩 Suporte a Extensões**: Carrega extensões WebExtensions (CRX) por perfil
+- **🛡️ Navegação Segura**: Integração com Google Safe Browsing API
+- **💾 Persistência**: Histórico, favoritos e downloads isolados por perfil
+- **📊 Monitoramento**: Monitoramento de memória e processos de renderização
 
-## Tecnologias
-
-- Kotlin
-- Android Jetpack
-- WebView com extensões
-- Gradle Kotlin DSL
-
-## Como Compilar
-
-1. Clone o repositório
-2. Abra no Android Studio
-3. Build -> Build Bundle(s) / APK(s)
-
-## Licença
-
-MIT License
+## 🏗️ Arquitetura

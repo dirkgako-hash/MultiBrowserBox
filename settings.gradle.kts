@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MultiBrowserManager"
+rootProject.name = "MultiBrowserBox"
 include(":app")

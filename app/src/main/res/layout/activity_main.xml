@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#121212">
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MultiBrowser Box"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="8dp" />
+    
+    <LinearLayout
+        android:id="@+id/profileSelector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp">
+        <!-- Profile buttons will be added dynamically -->
+    </LinearLayout>
+    
+    <TextView
+        android:id="@+id/statusTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecione perfis para começar"
+        android:textSize="12sp"
+        android:textColor="#AAAAAA"
+        android:padding="4dp" />
+    
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333"
+        android:layout_marginVertical="8dp"/>
+    
+    <GridLayout
+        android:id="@+id/gridContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:columnCount="2"
+        android:rowCount="2"
+        android:padding="4dp">
+        <!-- Browser containers will be added dynamically -->
+    </GridLayout>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp">
+        
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartAll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Iniciar Todos"
+            android:layout_margin="4dp"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="8dp"/>
+            
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearAll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Limpar Todos"
+            android:layout_margin="4dp"
+            app:backgroundTint="#F44336"
+            app:cornerRadius="8dp"/>
+            
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSettings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Configurações"
+            android:layout_margin="4dp"
+            app:backgroundTint="#2196F3"
+            app:cornerRadius="8dp"/>
+            
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFullscreen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tela Cheia"
+            android:layout_margin="4dp"
+            app:backgroundTint="#FF9800"
+            app:cornerRadius="8dp"/>
+    </LinearLayout>
+</LinearLayout>

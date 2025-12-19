@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">MultiBrowser Box</string>
+    <string name="action_settings">Configurações</string>
+    <string name="profile_default_name">Perfil Padrão</string>
+    <string name="url_hint">Digite a URL aqui</string>
+    <string name="button_back">Voltar</string>
+    <string name="button_forward">Avançar</string>
+    <string name="button_refresh">Atualizar</string>
+    <string name="button_home">Início</string>
+    <string name="menu_new_tab">Nova Aba</string>
+    <string name="menu_history">Histórico</string>
+    <string name="menu_bookmarks">Favoritos</string>
+    <string name="menu_downloads">Downloads</string>
+    <string name="warning_safe_browsing">Site potencialmente perigoso</string>
+    <string name="error_network">Erro de rede</string>
+    <string name="error_page_load">Falha ao carregar a página</string>
+</resources>
