@@ -4,13 +4,19 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    plugins {
+        id "com.android.application" version "8.2.2"
+        id "org.jetbrains.kotlin.android" version "1.9.10"
+    }
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
     }
 }
-rootProject.name = "MultiStreamViewer"
-include ':app'
+
+rootProject.name = "MultiBrowserBox"
+include(":app")
